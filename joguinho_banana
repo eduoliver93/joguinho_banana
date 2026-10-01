@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🍌 Banana Clicker</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Arial, sans-serif; }
+    body {
+      min-height: 100vh; display: flex; justify-content: center; align-items: center;
+      background: linear-gradient(135deg, #f9d423, #ff4e50); padding: 20px;
+    }
+    .container {
+      background: #fff; border-radius: 20px; padding: 30px; text-align: center;
+      box-shadow: 0 15px 40px rgba(0,0,0,0.25); max-width: 420px; width: 100%; position: relative;
+    }
+    h1 { color: #333; margin-bottom: 10px; }
+    #tela-nome input {
+      width: 100%; padding: 12px; font-size: 16px; border: 2px solid #ddd;
+      border-radius: 10px; margin-bottom: 15px; outline: none; text-align: center;
+    }
+    #tela-nome input:focus { border-color: #f9d423; }
+    button { cursor: pointer; border: none; border-radius: 10px; font-weight: bold; transition: transform 0.1s, filter 0.2s; }
+    button:active { transform: scale(0.95); }
+    #btn-iniciar { width: 100%; padding: 12px; background: #ff4e50; color: #fff; font-size: 18px; }
+    #btn-iniciar:hover { filter: brightness(1.1); }
+    #tela-jogo { display: none; }
+    #saudacao { font-size: 18px; color: #555; margin-bottom: 10px; }
+    #pontos { font-size: 40px; font-weight: bold; color: #ff4e50; margin-bottom: 15px; }
+    #banana {
+      font-size: 120px; background: none; border: none; cursor: pointer;
+      user-select: none; transition: transform 0.1s; line-height: 1;
+    }
+    #banana:hover { transform: scale(1.1) rotate(-5deg); }
+    #banana:active { transform: scale(0.9); }
+    .dica { color: #888; font-size: 14px; margin-top: 10px; }
+    #btn-parar {
+      width: 100%; padding: 12px; margin-top: 20px; background: #333; color: #fff; font-size: 16px;
+    }
+    #btn-parar:hover { filter: brightness(1.2); background: #c0392b; }
+    #btn-ranking {
+      position: absolute; top: 15px; right: 15px; padding: 8px 12px;
+      background: #f9d423; color: #333; font-size: 14px; border-radius: 8px; z-index: 10;
+    }
+    #btn-ranking:hover { filter: brightness(1.05); }
+    #tela-resultado { display: none; }
+    #tela-resultado h2 { color: #ff4e50; margin-bottom: 15px; }
+    #resultado-texto { font-size: 20px; color: #333; margin-bottom: 10px; line-height: 1.5; }
+    #resultado-pontos { font-size: 48px; font-weight: bold; color: #27ae60; margin: 15px 0; }
+    #mensagem-final { font-size: 16px; color: #666; font-style: italic; margin-bottom: 20px; }
+    #status-salvamento {
+      font-size: 13px; color: #3498db; margin-bottom: 15px; min-height: 18px;
+    }
+    #btn-jogar-novamente {
+      width: 100%; padding: 12px; background: #f9d423; color: #333; font-size: 18px; margin-bottom: 10px;
+    }
+    #btn-jogar-novamente:hover { filter: brightness(1.05); }
+    #btn-ver-ranking {
+      width: 100%; padding: 12px; background: #3498db; color: #fff; font-size: 16px;
+    }
+    #btn-ver-ranking:hover { filter: brightness(1.1); }
+    .modal-overlay {
+      display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6);
+      justify-content: center; align-items: center; z-index: 100; padding: 20px;
+    }
+    .modal-overlay.ativo { display: flex; }
+    .modal {
+      background: #fff; border-radius: 20px; padding: 25px; max-width: 400px; width: 100%;
+      text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+      animation: aparecer 0.3s ease-out; max-height: 85vh; overflow-y: auto;
+    }
+    @keyframes aparecer { from { opacity: 0; transform: scale(0.85); } to { opacity: 1; transform: scale(1); } }
+    .modal h2 { color: #f39c12; margin-bottom: 20px; font-size: 22px; }
+    .ranking-lista { list-style: none; text-align: left; margin-bottom: 15px; }
+    .ranking-lista li {
+      display: flex; align-items: center; padding: 10px 12px; margin-bottom: 6px;
+      border-radius: 10px; background: #f8f9fa; font-size: 15px; gap: 10px;
+    }
+    .ranking-lista li.destaque { background: #fff8d6; border: 2px solid #f9d423; font-weight: bold; }
+    .ranking-lista li.vazio { background: #fafafa; color: #bbb; font-style: italic; }
+    .ranking-lista li.vazio .posicao, .ranking-lista li.vazio .pontos-rank { color: #ccc; }
+    .ranking-lista li .posicao {
+      font-size: 18px; font-weight: bold; color: #f39c12; min-width: 32px; text-align: center;
+    }
+    .ranking-lista li .nome-rank { flex: 1; color: #333; word-break: break-word; text-align: left; }
+    .ranking-lista li .pontos-rank { color: #27ae60; font-weight: bold; white-space: nowrap; }
+    #btn-fechar-modal { width: 100%; padding: 12px; background: #333; color: #fff; font-size: 16px; }
+    #btn-fechar-modal:hover { filter: brightness(1.2); }
+    .pontos-flutuantes {
+      position: fixed; font-size: 24px; font-weight: bold; color: #27ae60;
+      pointer-events: none; animation: subir 0.8s ease-out forwards; z-index: 200;
+    }
+    @keyframes subir {
+      0% { opacity: 1; transform: translateY(0); }
+      100% { opacity: 0; transform: translateY(-60px); }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <button id="btn-ranking" title="Ver recorde">🏆 Ranking</button>
+
+    <!-- Tela de início -->
+    <div id="tela-nome">
+      <h1>🍌 Banana Clicker</h1>
+      <p style="margin-bottom:15px; color:#666;">Digite seu nome para começar:</p>
+      <input type="text" id="input-nome" placeholder="Seu nome" maxlength="20">
+      <button id="btn-iniciar">Começar a Comer!</button>
+    </div>
+
+    <!-- Tela do jogo -->
+    <div id="tela-jogo">
+      <p id="saudacao"></p>
+      <div id="pontos">0</div>
+      <button id="banana" title="Clique para comer!">🍌</button>
+      <p class="dica">Clique na banana para ganhar pontos!</p>
+      <button id="btn-parar">😩 Não aguento comer mais!</button>
+    </div>
+
+    <!-- Tela de resultado -->
+    <div id="tela-resultado">
+      <h2>🏁 Fim de Jogo!</h2>
+      <p id="resultado-texto"></p>
+      <div id="resultado-pontos">0</div>
+      <p id="mensagem-final"></p>
+      <p id="status-salvamento"></p>
+      <button id="btn-jogar-novamente">🔄 Jogar Novamente</button>
+      <button id="btn-ver-ranking">🏆 Ver Ranking</button>
+    </div>
+  </div>
+
+  <!-- Modal de Ranking -->
+  <div class="modal-overlay" id="modal-ranking">
+    <div class="modal">
+      <h2>🏆 Top 10 Comedores de Bananas</h2>
+      <div id="ranking-conteudo"></div>
+      <button id="btn-fechar-modal">Fechar</button>
+    </div>
+  </div>
+
+  <script type="module">
+    // ===== IMPORTS DO FIREBASE =====
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
+    import {
+      getFirestore, collection, addDoc, getDocs, query, orderBy, limit, serverTimestamp
+    } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
+
+    // ===== CONFIGURAÇÃO DO FIREBASE =====
+    const firebaseConfig = {
+      apiKey: "AIzaSyAxbBCIhMc1EIRuN2TbZ7P6JRhnqMr8n_I",
+      authDomain: "banana-clicker-e7040.firebaseapp.com",
+      projectId: "banana-clicker-e7040",
+      storageBucket: "banana-clicker-e7040.firebasestorage.app",
+      messagingSenderId: "245505964485",
+      appId: "1:245505964485:web:64caf4e654b0029b9b73ac",
+      measurementId: "G-CFWMLZ987P"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // ===== ELEMENTOS =====
+    const telaNome = document.getElementById('tela-nome');
+    const telaJogo = document.getElementById('tela-jogo');
+    const telaResultado = document.getElementById('tela-resultado');
+    const inputNome = document.getElementById('input-nome');
+    const btnIniciar = document.getElementById('btn-iniciar');
+    const saudacao = document.getElementById('saudacao');
+    const pontosEl = document.getElementById('pontos');
+    const banana = document.getElementById('banana');
+    const btnParar = document.getElementById('btn-parar');
+    const resultadoTexto = document.getElementById('resultado-texto');
+    const resultadoPontos = document.getElementById('resultado-pontos');
+    const mensagemFinal = document.getElementById('mensagem-final');
+    const statusSalvamento = document.getElementById('status-salvamento');
+    const btnJogarNovamente = document.getElementById('btn-jogar-novamente');
+    const btnVerRanking = document.getElementById('btn-ver-ranking');
+    const btnRanking = document.getElementById('btn-ranking');
+    const modalRanking = document.getElementById('modal-ranking');
+    const rankingConteudo = document.getElementById('ranking-conteudo');
+    const btnFecharModal = document.getElementById('btn-fechar-modal');
+
+    // ===== ESTADO =====
+    let pontos = 0;
+    let nomeUsuario = '';
+    const MAX_RANKING = 10;
+
+    // ===== INICIAR JOGO =====
+    btnIniciar.addEventListener('click', iniciarJogo);
+    inputNome.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') iniciarJogo();
+    });
+
+    function iniciarJogo() {
+      const nome = inputNome.value.trim();
+      if (nome === '') {
+        alert('Por favor, digite um nome de usuário!');
+        return;
+      }
+      nomeUsuario = nome;
+      pontos = 0;
+      pontosEl.textContent = pontos;
+      saudacao.textContent = `Jogador: ${nomeUsuario}`;
+      telaNome.style.display = 'none';
+      telaResultado.style.display = 'none';
+      telaJogo.style.display = 'block';
+    }
+
+    // ===== CLIQUE NA BANANA =====
+    banana.addEventListener('click', (e) => {
+      pontos++;
+      pontosEl.textContent = pontos;
+      mostrarPontoFlutuante(e);
+    });
+
+    function mostrarPontoFlutuante(e) {
+      const flutuante = document.createElement('div');
+      flutuante.classList.add('pontos-flutuantes');
+      flutuante.textContent = '+1';
+      flutuante.style.left = e.clientX + 'px';
+      flutuante.style.top = e.clientY + 'px';
+      document.body.appendChild(flutuante);
+      setTimeout(() => flutuante.remove(), 800);
+    }
+
+    // ===== FINALIZAR JOGO =====
+    btnParar.addEventListener('click', finalizarJogo);
+
+    async function finalizarJogo() {
+      telaJogo.style.display = 'none';
+      telaResultado.style.display = 'block';
+      statusSalvamento.textContent = '⏳ Salvando no ranking global...';
+      statusSalvamento.style.color = '#3498db';
+
+      resultadoTexto.textContent = `${nomeUsuario}, você comeu ${pontos} banana${pontos === 1 ? '' : 's'}!`;
+      resultadoPontos.textContent = `${pontos} ponto${pontos === 1 ? '' : 's'}`;
+
+      let msg = '';
+      if (pontos === 0) msg = 'Você nem tocou na banana... ficou com fome! 🥺';
+      else if (pontos < 10) msg = 'Isso foi só um lanchinho! Ainda dá pra comer mais. 🍌';
+      else if (pontos < 30) msg = 'Boa! Você é fã de banana! 🍌🍌';
+      else if (pontos < 60) msg = 'Uau! Você é um verdadeiro macaco viciado em banana! 🐒';
+      else msg = 'LENDÁRIO! Você é o REI DAS BANANAS! 👑🍌';
+
+      mensagemFinal.textContent = msg;
+
+      // Salva no Firebase
+      try {
+        await addDoc(collection(db, 'ranking'), {
+          nome: nomeUsuario,
+          pontos: pontos,
+          data: serverTimestamp()
+        });
+        statusSalvamento.textContent = '✅ Pontuação salva no ranking global!';
+        statusSalvamento.style.color = '#27ae60';
+      } catch (err) {
+        console.error('Erro ao salvar:', err);
+        statusSalvamento.textContent = '❌ Erro ao salvar. Verifique se as regras do Firestore estão publicadas.';
+        statusSalvamento.style.color = '#e74c3c';
+      }
+    }
+
+    // ===== JOGAR NOVAMENTE =====
+    btnJogarNovamente.addEventListener('click', () => {
+      pontos = 0;
+      pontosEl.textContent = 0;
+      inputNome.value = '';
+      telaResultado.style.display = 'none';
+      telaNome.style.display = 'block';
+      inputNome.focus();
+    });
+
+    // ===== RANKING =====
+    async function abrirRanking() {
+      modalRanking.classList.add('ativo');
+      rankingConteudo.innerHTML = '<p style="color:#888">Carregando...</p>';
+
+      try {
+        const q = query(
+          collection(db, 'ranking'),
+          orderBy('pontos', 'desc'),
+          limit(MAX_RANKING)
+        );
+        const snapshot = await getDocs(q);
+        const lista = [];
+        snapshot.forEach(doc => lista.push(doc.data()));
+
+        let html = '<ol class="ranking-lista">';
+        for (let i = 0; i < MAX_RANKING; i++) {
+          const posicao = i + 1;
+          const item = lista[i];
+
+          let medalha = `${posicao}º`;
+          if (posicao === 1) medalha = '🥇';
+          else if (posicao === 2) medalha = '🥈';
+          else if (posicao === 3) medalha = '🥉';
+
+          if (item) {
+            const destaque = item.nome === nomeUsuario ? ' destaque' : '';
+            html += `
+              <li class="${destaque.trim()}">
+                <span class="posicao">${medalha}</span>
+                <span class="nome-rank">${escapeHtml(item.nome)}</span>
+                <span class="pontos-rank">${item.pontos} 🍌</span>
+              </li>`;
+          } else {
+            html += `
+              <li class="vazio">
+                <span class="posicao">${medalha}</span>
+                <span class="nome-rank">--- vago ---</span>
+                <span class="pontos-rank">0 🍌</span>
+              </li>`;
+          }
+        }
+        html += '</ol>';
+        rankingConteudo.innerHTML = html;
+      } catch (err) {
+        console.error('Erro ao carregar ranking:', err);
+        rankingConteudo.innerHTML = '<p style="color:#e74c3c">Erro ao carregar ranking. Verifique se as regras do Firestore estão publicadas (allow read, write).</p>';
+      }
+    }
+
+    function fecharRanking() {
+      modalRanking.classList.remove('ativo');
+    }
+
+    btnRanking.addEventListener('click', abrirRanking);
+    btnVerRanking.addEventListener('click', abrirRanking);
+    btnFecharModal.addEventListener('click', fecharRanking);
+    modalRanking.addEventListener('click', (e) => {
+      if (e.target === modalRanking) fecharRanking();
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') fecharRanking();
+    });
+
+    function escapeHtml(texto) {
+      const div = document.createElement('div');
+      div.textContent = texto;
+      return div.innerHTML;
+    }
+  </script>
+</body>
+</html>
